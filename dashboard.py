@@ -169,3 +169,21 @@ st.text(""" Insight:
 2. Dalam frekuensi belanja konsumen per hari berdasarkan jam dapat dilihat bahwa jumlah invoice pesanan produk yang masuk tinggi mulai pukul 10.00-21.00 dan menurun pada pukul 22.00 keatas mulai menurun dan tingkat berbelanja pukul 02.00-06.00 cenderung rendah kemungkinan aktivitas belanja oleh konsumen. Hal ini menunjukkan pada jam sibuk mulai jam 10.00-20.00 adalah selang waktu orang beristirahat dan memiliki waktu luang
 
 3. Dalam frekuensi belanja konsumen per bulan dapat kita lihat bahwa kegiatan berbelanja berada pada puncaknya di bulan mei hingga agustus. Hal ini kemungkinan terjadi karena di brazil sendiri terjadi musim dingin sekitar bulan juni-agustus yang mengakibatkan masyarakatnya cenderung berbelanja online dibandingkan pergi ke toko fisik karena keterbatasan berkegiatan di musim salju/musim dingin.""")
+
+st.text("""  Conclution pertanyaan 1
+
+Dalam periode 2016-2018, Olist Store di Brazil menunjukkan pola pembelian yang tinggi pada beberapa kategori produk. **Kategori "bed_bath_table" menjadi yang paling diminati**, diikuti oleh **health_beauty, sports_leisure, furniture_decor, dan computers_accessories**. Produk dalam kategori ini memiliki permintaan yang konsisten dan tinggi. Sementara itu, kategori seperti **housewares, watches_gifts, telephony, garden_tools, dan auto** masih memiliki peminat tetapi dengan jumlah pembelian yang lebih rendah.  
+
+Dari pola ini, strategi pemasaran bisa difokuskan pada kategori produk yang paling diminati dengan **peningkatan stok, promosi, dan diskon** untuk mempertahankan serta meningkatkan jumlah pembelian. Selain itu, kategori dengan penjualan lebih rendah bisa diberikan strategi pemasaran khusus untuk meningkatkan daya tariknya.
+
+
+
+Conclution pertanyaan 2
+
+Pola waktu pembelian konsumen menunjukkan bahwa transaksi lebih sering terjadi pada hari kerja (Senin–Jumat) dibandingkan hari libur. Hal ini kemungkinan disebabkan oleh kebutuhan rutin, seperti perlengkapan kantor yang harus dibeli untuk menunjang aktivitas harian. Selain itu, banyak toko yang beroperasi penuh pada hari kerja, sehingga konsumen lebih aktif berbelanja pada periode tersebut dibandingkan akhir pekan atau hari libur.
+
+Jika dilihat berdasarkan jam transaksi dalam sehari, jumlah pesanan mulai meningkat dari pukul 10.00 dan mencapai puncaknya pada pukul 21.00. Setelah pukul 22.00, tingkat transaksi mulai menurun drastis, dan pada pukul 02.00–06.00 aktivitas belanja cenderung sangat rendah. Pola ini menunjukkan bahwa konsumen cenderung melakukan pembelian pada jam istirahat dan waktu luang, terutama pada rentang 10.00–20.00 yang menjadi periode dengan tingkat transaksi tertinggi.
+
+Dari segi pola pembelian per bulan, dapat terlihat bahwa aktivitas belanja mencapai puncaknya pada bulan Mei hingga Agustus. Salah satu faktor yang mungkin mempengaruhi adalah musim dingin di Brasil, yang terjadi sekitar Juni–Agustus. Selama periode ini, masyarakat cenderung lebih memilih berbelanja online daripada mengunjungi toko fisik karena keterbatasan aktivitas di luar ruangan akibat cuaca dingin.
+
+Berdasarkan pola ini, terdapat beberapa strategi yang dapat diterapkan oleh Olist untuk meningkatkan penjualan. Salah satunya adalah dengan menargetkan promosi dan iklan pada jam 10.00–20.00 di hari kerja, mengingat periode ini memiliki jumlah transaksi tertinggi dan potensi keterlibatan konsumen yang lebih besar. Selain itu, strategi promo khusus seperti diskon akhir tahun pada November–Januari dapat membantu meningkatkan penjualan di bulan-bulan tersebut karena memasuki liburan pergantian tahun dimana terdapat weekend panjang dalam bulan bulan tersebut. Olist juga dapat memanfaatkan momentum musim dingin dengan mengadakan promo cuci gudang atau diskon spesial menjelang bulan Juni untuk menarik lebih banyak konsumen yang memilih berbelanja online selama musim dingin. Dengan pemanfaatan pola ini, Olist dapat merancang strategi pemasaran yang lebih efektif untuk meningkatkan konversi dan daya tarik platform bagi konsumen.""")
