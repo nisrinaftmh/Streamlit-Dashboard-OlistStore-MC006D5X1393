@@ -3,294 +3,169 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from datetime import datetime, timedelta
 
-# Set page config
-st.set_page_config(layout="wide", page_title="Analisis E-Commerce Olist")
-
-# Title and description
 st.title("Dashboard Analisis dan Visualisasi Data E-Commerce Olist Store Brazil (2016-2018)")
-st.markdown("Dashboard ini menampilkan analisis pola belanja konsumen berdasarkan waktu")
 
-# Load data
-@st.cache_data
-def load_data():
-    pesanan_df = pd.read_csv("E-Commerce Public Dataset/orders_dataset.csv")
-    barangDibeli_df = pd.read_csv("E-Commerce Public Dataset/order_items_dataset.csv")
-    produk_df = pd.read_csv("E-Commerce Public Dataset/products_dataset.csv")
-    proCa_df = pd.read_csv("E-Commerce Public Dataset/product_category_name_translation.csv")
-    
-    df = pd.merge(pesanan_df, barangDibeli_df, on='order_id', how='inner')
-    df = pd.merge(df, produk_df, on='product_id', how='inner')
-    df = pd.merge(df, proCa_df, on='product_category_name', how='left')
-    df['product_category_name'] = df['product_category_name_english']
-    df.drop('product_category_name_english', axis=1, inplace=True)
-    df['order_purchase_timestamp'] = pd.to_datetime(df['order_purchase_timestamp'])
-    
-    # Tambahan kolom waktu untuk analisis
-    df['year'] = df['order_purchase_timestamp'].dt.year
-    df['month'] = df['order_purchase_timestamp'].dt.month
-    df['month_name'] = df['order_purchase_timestamp'].dt.month_name()
-    df['day'] = df['order_purchase_timestamp'].dt.day
-    df['day_of_week'] = df['order_purchase_timestamp'].dt.dayofweek
-    df['day_name'] = df['order_purchase_timestamp'].dt.day_name()
-    df['hour_of_day'] = df['order_purchase_timestamp'].dt.hour
-    
+# Path ke file CSV 
+pesanan_df = pd.read_csv("E-Commerce Public Dataset/orders_dataset.csv")
+barangDibeli_df = pd.read_csv("E-Commerce Public Dataset/order_items_dataset.csv")
+produk_df = pd.read_csv("E-Commerce Public Dataset/products_dataset.csv")
+proCa_df = pd.read_csv("E-Commerce Public Dataset/product_category_name_translation.csv")
+customer_df = pd.read_csv("E-Commerce Public Dataset/customers_dataset.csv")
+pay_df = pd.read_csv("E-Commerce Public Dataset/order_payments_dataset.csv")
+
+# Fungsi untuk mengisi missing values dengan mean/mode
+def fill_missing_with_mean(df):
+    for col in df.select_dtypes(include=np.number):
+        df[col] = df[col].fillna(df[col].mean())
+    for col in df.select_dtypes(include=['object']):
+        df[col] = df[col].fillna(df[col].mode()[0])
     return df
 
-try:
-    # Load data
-    df = load_data()
-    
-    # Sidebar Filters
-    st.sidebar.header("Pilih Rentang Waktu analisis")
-    
-    # Filter tahun
-    years = sorted(df['year'].unique())
-    selected_years = st.sidebar.multiselect("Pilih Tahun", years, default=years)
-    
-    # Filter hanya jika user memilih setidaknya satu tahun
-    if selected_years:
-        df_filtered = df[df['year'].isin(selected_years)]
-        
-        # Filter berdasarkan rentang tanggal
-        min_date = df_filtered['order_purchase_timestamp'].min().date()
-        max_date = df_filtered['order_purchase_timestamp'].max().date()
-        
-        date_range = st.sidebar.date_input(
-            "Pilih Rentang Tanggal",
-            [min_date, min_date + timedelta(days=30)],
-            min_value=min_date,
-            max_value=max_date
-        )
-        
-        # Memastikan rentang tanggal valid
-        if len(date_range) == 2:
-            start_date, end_date = date_range
-            df_filtered = df_filtered[
-                (df_filtered['order_purchase_timestamp'].dt.date >= start_date) & 
-                (df_filtered['order_purchase_timestamp'].dt.date <= end_date)
-            ]
-            
-            # Filter berdasarkan hari dalam seminggu
-            days_map = {
-                0: 'Senin', 
-                1: 'Selasa', 
-                2: 'Rabu', 
-                3: 'Kamis', 
-                4: 'Jumat', 
-                5: 'Sabtu', 
-                6: 'Minggu'
-            }
-            
-            days_options = list(days_map.values())
-            selected_days = st.sidebar.multiselect("Pilih Hari", days_options, default=days_options)
-            
-            # Mengonversi nama hari ke indeks untuk filter
-            day_indices = [list(days_map.keys())[list(days_map.values()).index(day)] for day in selected_days]
-            
-            if day_indices:  # Hanya filter jika ada hari yang dipilih
-                df_filtered = df_filtered[df_filtered['day_of_week'].isin(day_indices)]
-            
-            # Tampilkan KPI Metrics dalam 4 kolom
-            col1, col2, col3, col4 = st.columns(4)
-            with col1:
-                total_orders = df_filtered['order_id'].nunique()
-                st.metric("Total Pesanan", f"{total_orders:,}")
-            with col2:
-                total_products = df_filtered['product_id'].nunique()
-                st.metric("Total Produk Terjual", f"{total_products:,}")
-            with col3:
-                avg_price = df_filtered['price'].mean()
-                st.metric("Rata-rata Harga", f"R$ {avg_price:.2f}")
-            with col4:
-                total_revenue = df_filtered['price'].sum()
-                st.metric("Total Pendapatan", f"R$ {total_revenue:,.2f}")
-            
-            # Buat tab untuk berbagai visualisasi
-            tab1, tab2, tab3 = st.tabs(["Pola Waktu Belanja", "Analisis Hari", "Tren Bulanan"])
-            
-            with tab1:
-                st.subheader("Frekuensi Pembelian dalam Sehari")
-                
-                # Interaktivitas untuk rentang jam
-                hour_min, hour_max = st.slider(
-                    "Pilih Rentang Jam:",
-                    0, 23, (0, 23)
-                )
-                
-                hour_filtered = df_filtered[
-                    (df_filtered['hour_of_day'] >= hour_min) & 
-                    (df_filtered['hour_of_day'] <= hour_max)
-                ]
-                
-                # Membuat visualisasi frekuensi per jam
-                fig, ax = plt.subplots(figsize=(12, 6))
-                
-                hour_counts = hour_filtered['hour_of_day'].value_counts().sort_index()
-                sns.barplot(x=hour_counts.index, y=hour_counts.values, ax=ax, palette='viridis')
-                
-                ax.set_xlabel("Jam dalam Sehari")
-                ax.set_ylabel("Jumlah Pesanan")
-                ax.set_title(f"Frekuensi Pembelian (Jam {hour_min}:00 - {hour_max}:00)")
-                ax.set_xticks(range(hour_min, hour_max + 1))
-                ax.set_xticklabels([f"{h}:00" for h in range(hour_min, hour_max + 1)])
-                
-                st.pyplot(fig)
-                
-                # Tampilkan tabel detail
-                hour_detail = hour_filtered.groupby('hour_of_day').agg({
-                    'order_id': pd.Series.nunique,
-                    'price': 'sum'
-                }).reset_index()
-                
-                hour_detail.columns = ['Jam', 'Jumlah Pesanan', 'Total Pendapatan (R$)']
-                hour_detail['Jam'] = hour_detail['Jam'].apply(lambda x: f"{x}:00")
-                st.dataframe(hour_detail, use_container_width=True)
-            
-            with tab2:
-                st.subheader("Analisis Berdasarkan Hari dalam Seminggu")
-                
-                # Menambahkan nama hari dalam bahasa Indonesia
-                df_filtered_day = df_filtered.copy()
-                df_filtered_day['nama_hari'] = df_filtered_day['day_of_week'].map(days_map)
-                
-                # Buat 2 kolom untuk visualisasi hari
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    # Visualisasi jumlah pesanan per hari
-                    fig, ax = plt.subplots(figsize=(10, 6))
-                    
-                    day_order_counts = df_filtered_day.groupby('nama_hari')['order_id'].nunique().reindex(days_options)
-                    
-                    sns.barplot(
-                        x=day_order_counts.index, 
-                        y=day_order_counts.values, 
-                        ax=ax,
-                        palette='Blues_d'
-                    )
-                    
-                    ax.set_xlabel("Hari")
-                    ax.set_ylabel("Jumlah Pesanan")
-                    ax.set_title("Jumlah Pesanan per Hari")
-                    plt.xticks(rotation=45)
-                    
-                    st.pyplot(fig)
-                
-                with col2:
-                    # Visualisasi pendapatan per hari
-                    fig, ax = plt.subplots(figsize=(10, 6))
-                    
-                    day_revenue = df_filtered_day.groupby('nama_hari')['price'].sum().reindex(days_options)
-                    
-                    sns.barplot(
-                        x=day_revenue.index, 
-                        y=day_revenue.values, 
-                        ax=ax,
-                        palette='Greens_d'
-                    )
-                    
-                    ax.set_xlabel("Hari")
-                    ax.set_ylabel("Total Pendapatan (R$)")
-                    ax.set_title("Pendapatan per Hari")
-                    plt.xticks(rotation=45)
-                    
-                    st.pyplot(fig)
-                
-                # Tampilkan tabel detail per hari
-                day_stats = df_filtered_day.groupby('nama_hari').agg({
-                    'order_id': pd.Series.nunique,
-                    'price': 'sum',
-                    'product_id': pd.Series.nunique
-                }).reset_index()
-                
-                day_stats.columns = ['Hari', 'Jumlah Pesanan', 'Total Pendapatan (R$)', 'Jumlah Produk']
-                # Mengurutkan berdasarkan urutan hari dalam seminggu
-                day_order = {day: i for i, day in enumerate(days_options)}
-                day_stats['sort_order'] = day_stats['Hari'].map(day_order)
-                day_stats = day_stats.sort_values('sort_order').drop('sort_order', axis=1)
-                
-                st.dataframe(day_stats, use_container_width=True)
-            
-            with tab3:
-                st.subheader("Tren Pembelian Bulanan")
-                
-                # Persiapkan data bulanan
-                df_filtered['year_month'] = df_filtered['order_purchase_timestamp'].dt.strftime('%Y-%m')
-                df_filtered['month_year_label'] = df_filtered['order_purchase_timestamp'].dt.strftime('%b %Y')
-                
-                monthly_data = df_filtered.groupby(['year_month', 'month_year_label']).agg({
-                    'order_id': pd.Series.nunique,
-                    'price': 'sum'
-                }).reset_index()
-                
-                # Urutkan berdasarkan tahun-bulan
-                monthly_data['sort_key'] = pd.to_datetime(monthly_data['year_month'] + '-01')
-                monthly_data = monthly_data.sort_values('sort_key')
-                
-                # Visualisasi tren bulanan
-                fig, ax1 = plt.subplots(figsize=(14, 7))
-                
-                # Plot jumlah pesanan
-                ax1.set_xlabel('Bulan-Tahun')
-                ax1.set_ylabel('Jumlah Pesanan', color='tab:blue')
-                ax1.plot(monthly_data['month_year_label'], monthly_data['order_id'], 'o-', color='tab:blue', label='Pesanan')
-                ax1.tick_params(axis='y', labelcolor='tab:blue')
-                
-                # Plot pendapatan pada axis kedua
-                ax2 = ax1.twinx()
-                ax2.set_ylabel('Total Pendapatan (R$)', color='tab:green')
-                ax2.plot(monthly_data['month_year_label'], monthly_data['price'], 'o-', color='tab:green', label='Pendapatan')
-                ax2.tick_params(axis='y', labelcolor='tab:green')
-                
-                # Judul dan legenda
-                plt.title('Tren Pesanan dan Pendapatan per Bulan')
-                plt.xticks(rotation=45)
-                
-                # Gabungkan legends dari kedua axes
-                lines1, labels1 = ax1.get_legend_handles_labels()
-                lines2, labels2 = ax2.get_legend_handles_labels()
-                ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper left')
-                
-                fig.tight_layout()
-                st.pyplot(fig)
-                
-                # Visualisasi heatmap pola belanja
-                st.subheader("Pola Belanja Berdasarkan Hari dan Jam")
-                
-                # Membuat data untuk heatmap
-                heatmap_data = df_filtered.groupby(['day_of_week', 'hour_of_day']).size().reset_index(name='count')
-                heatmap_pivot = heatmap_data.pivot(index='day_of_week', columns='hour_of_day', values='count').fillna(0)
-                
-                # Mengubah indeks angka menjadi nama hari
-                heatmap_pivot.index = [days_map[day] for day in heatmap_pivot.index]
-                
-                # Membuat heatmap
-                fig, ax = plt.subplots(figsize=(14, 8))
-                sns.heatmap(
-                    heatmap_pivot, 
-                    annot=False, 
-                    cmap="viridis", 
-                    ax=ax,
-                    cbar_kws={'label': 'Jumlah Pesanan'}
-                )
-                
-                ax.set_xlabel("Jam")
-                ax.set_ylabel("Hari")
-                ax.set_title("Heatmap Pesanan Berdasarkan Hari dan Jam")
-                
-                st.pyplot(fig)
-        
-        else:
-            st.warning("Silakan pilih rentang tanggal (dari dan sampai)")
-    else:
-        st.warning("Silakan pilih minimal satu tahun")
+# Bersihkan data
+produk_df = fill_missing_with_mean(produk_df)
+barangDibeli_df = fill_missing_with_mean(barangDibeli_df)
+pesanan_df = fill_missing_with_mean(pesanan_df)
+proCa_df = fill_missing_with_mean(proCa_df)
+customer_df = fill_missing_with_mean(customer_df)
+pay_df = fill_missing_with_mean(pay_df)
 
-except Exception as e:
-    st.error(f"Error: {e}")
-    st.error("Pastikan file data tersedia di folder 'E-Commerce Public Dataset'")
+# Gabungkan data
+df = pd.merge(pesanan_df, barangDibeli_df, on='order_id', how='inner')
+df = pd.merge(df, produk_df, on='product_id', how='inner')
+df = pd.merge(df, proCa_df, on='product_category_name', how='left')
 
-# Footer
-st.markdown("---")
-st.caption("© 2025 Dashboard E-Commerce Olist Store Brazil")
+# Gunakan nama kategori produk dalam bahasa Inggris, isi yang kosong dengan "Unknown"
+df['product_category_name'] = df['product_category_name_english'].fillna("Unknown")
+df.drop('product_category_name_english', axis=1, inplace=True)
+
+# Konversi kolom timestamp ke format datetime
+df['order_purchase_timestamp'] = pd.to_datetime(df['order_purchase_timestamp'])
+
+# Filter hanya tahun 2016-2018
+df = df[(df['order_purchase_timestamp'].dt.year >= 2016) & (df['order_purchase_timestamp'].dt.year <= 2018)]
+
+# Sidebar untuk Rentang Waktu
+start_date = pd.to_datetime("2016-01-01")
+end_date = pd.to_datetime("2018-12-31")
+
+date_range = st.sidebar.date_input(
+    "Pilih Rentang Tanggal", 
+    [start_date.date(), end_date.date()], 
+    min_value=start_date.date(), 
+    max_value=end_date.date()
+)
+
+# Terapkan Filter Rentang Tanggal
+if len(date_range) == 2:
+    start_date = pd.to_datetime(date_range[0])
+    end_date = pd.to_datetime(date_range[1])
+    df = df[(df['order_purchase_timestamp'] >= start_date) & (df['order_purchase_timestamp'] <= end_date)]
+
+# Top 10 kategori produk terlaris
+category_counts = df['product_category_name'].value_counts().head(10)
+
+st.subheader("Top 10 Best-Selling Product Categories (2016-2018)")
+fig, ax = plt.subplots(figsize=(15, 6))
+sns.barplot(x=category_counts.index, y=category_counts.values, ax=ax)
+ax.set_title('Top 10 Best-Selling Product Categories (2016-2018)')
+ax.set_xlabel('Product Category')
+ax.set_ylabel('Number of Purchases')
+ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+
+for i, v in enumerate(category_counts.values):
+    ax.text(i, v + 5, str(v), ha='center', fontsize=12)
+
+st.pyplot(fig)
+
+
+st.text("""Insight
+- Secara garis besar, hasil pola yang didapatkan pada grafik visualisasi data yang didapatkan, dalam periode 3 tahun terakhir (2016 - 2018) Olist Store milik Brazil memiliki beberapa kategori produk yang sering dibeli dan diminati oleh konsumen mereka diantaranya
+
+1. pada tabel bed_bath_table yang merupakan kategori perabotan untuk ruangan di rumah, pada grafik dapat kita lihat bahwa terdapat kurang lebih dari 12718 lebih pembelian yang menunjukkan tingginya minat konsumen pada barang barang khusus untuk di kamar tidur dan kamar mandi selama 3 tahun terakhir
+
+2. pada tabel health_beauty kita dapat melihat bahwa jumlah pembelian produk terdapat pada kisaran kurang lebih 9670  pembelian oleh konsumen dimana hal ini menunjukkan ketertarikan tinggi pada kategori produk kecantikan dan perawatan diri oleh konsumen
+
+3. sport_leisure (peralatan olahraga) menempati posisi ketiga dengan pembelian kategori produk tersebut sebanyak 8641 lebih pembelian
+
+4. Furniture_decor (Furnitur dan dekorasi)menempati posisi keempat dengan pembelian kategori produk tersebut sebanyak kurang lebih 8334 pembelian
+
+5. computers_accessories melengkapi lima besar dengan sekitar pembelian 7827 kategori produk tersebut, dimana hal ini menunjukkan permintaan yang konsisten untuk produk elektronik atau aksesoris komputer.
+
+6. Kategori "housewares", "watches_gifts", "telephony", "garden_tools", dan "auto" menempati posisi 6-10 dengan jumlah pembelian yang menurun secara bertahap dari sekitar 6900 hingga 4000 pembelian..""")
+
+
+# Analisis pola waktu pembelian
+df['day_of_week'] = df['order_purchase_timestamp'].dt.dayofweek
+df['hour_of_day'] = df['order_purchase_timestamp'].dt.hour
+df['month'] = df['order_purchase_timestamp'].dt.month
+df['is_weekend'] = df['day_of_week'].apply(lambda x: 1 if x >= 5 else 0)
+
+st.subheader("Purchase Frequency by Day of Week")
+fig, ax = plt.subplots(figsize=(10, 5))
+day_counts = df['day_of_week'].value_counts().sort_index()
+day_labels = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+sns.barplot(x=day_counts.index, y=day_counts.values, ax=ax)
+ax.set_xticks(range(7))
+ax.set_xticklabels(day_labels)
+
+for i, v in enumerate(day_counts.values):
+    ax.text(i, v + 5, str(v), ha='center', fontsize=12)
+
+st.pyplot(fig)
+
+
+st.subheader("Purchase Frequency: Weekday vs. Weekend")
+fig, ax = plt.subplots(figsize=(8, 6))
+
+weekend_counts = df['is_weekend'].value_counts().sort_index()
+weekend_labels = ['Weekday', 'Weekend']
+
+sns.barplot(x=weekend_counts.index, y=weekend_counts.values, ax=ax)
+ax.set_xticks([0, 1])
+ax.set_xticklabels(weekend_labels)
+
+for i, v in enumerate(weekend_counts.values):
+    ax.text(i, v + 5, str(v), ha='center', fontsize=12)
+
+st.pyplot(fig)
+
+
+st.subheader("Purchase Frequency by Hour of Day")
+
+fig, ax = plt.subplots(figsize=(10, 5))
+sns.countplot(x='hour_of_day', data=df, ax=ax)
+ax.set_title('Purchase Frequency by Hour of Day')
+ax.set_xlabel('Hour of Day')
+ax.set_ylabel('Number of Orders')
+
+
+for i in ax.containers:
+    ax.bar_label(i, fmt='%d', label_type='edge', fontsize=10, padding=3)
+
+st.pyplot(fig)
+
+
+st.subheader("Purchase Frequency by Month")
+fig, ax = plt.subplots(figsize=(10, 5))
+month_counts = df['month'].value_counts().reindex(range(1, 13), fill_value=0)
+month_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+sns.barplot(x=month_counts.index, y=month_counts.values, ax=ax)
+ax.set_xticklabels(month_labels)
+
+for i, v in enumerate(month_counts.values):
+    ax.text(i, v + 300, str(v), ha='center', fontsize=12)
+
+st.pyplot(fig)
+
+
+
+st.text(""" Insight:
+- Berdasarkan visualisasi data diatas dapat ditarik kesimpulan bahwa
+1. Dalam frekuensi belanja konsumen perminggu pada diagram diatas dapat dilihat bahwa konsumen lebih sering berbelanja di hari kerja (senin-jumat) dibandingkan hari libur, tingginya aktivitas berbelanja oleh konsumemn di hari kerja kemungkinan karena banyak kebutuhan yang diperlukan seperti misalnya kebutuhan kantor yang dibutuhkan untuk rutinitas harian, selain itu kebanyakan toko beroperasional di hari kerja yang mengakibatkan tingginya angka berbelanja di hari kerja.
+
+2. Dalam frekuensi belanja konsumen per hari berdasarkan jam dapat dilihat bahwa jumlah invoice pesanan produk yang masuk tinggi mulai pukul 10.00-21.00 dan menurun pada pukul 22.00 keatas mulai menurun dan tingkat berbelanja pukul 02.00-06.00 cenderung rendah kemungkinan aktivitas belanja oleh konsumen. Hal ini menunjukkan pada jam sibuk mulai jam 10.00-20.00 adalah selang waktu orang beristirahat dan memiliki waktu luang
+
+3. Dalam frekuensi belanja konsumen per bulan dapat kita lihat bahwa kegiatan berbelanja berada pada puncaknya di bulan mei hingga agustus. Hal ini kemungkinan terjadi karena di brazil sendiri terjadi musim dingin sekitar bulan juni-agustus yang mengakibatkan masyarakatnya cenderung berbelanja online dibandingkan pergi ke toko fisik karena keterbatasan berkegiatan di musim salju/musim dingin.""")
