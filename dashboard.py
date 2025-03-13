@@ -6,6 +6,11 @@ import seaborn as sns
 
 st.title("Dashboard Analisis dan Visualisasi Data E-Commerce Olist Store Brazil (2016-2018)")
 
+
+st.subheader(""" Pertanyaan Bisnis
+- Apa saja kategori produk yang dijual di Olist dan diminati konsumen dalam 3 tahun terakhir (2016-2018)
+- Bagaimana Pola Waktu Pembelian Konsumen pada Hari Kerja dan Hari Libur?""")
+
 # Path ke file CSV 
 pesanan_df = pd.read_csv("E-Commerce Public Dataset/orders_dataset.csv")
 barangDibeli_df = pd.read_csv("E-Commerce Public Dataset/order_items_dataset.csv")
@@ -62,10 +67,11 @@ if len(date_range) == 2:
     end_date = pd.to_datetime(date_range[1])
     df = df[(df['order_purchase_timestamp'] >= start_date) & (df['order_purchase_timestamp'] <= end_date)]
 
+
 # Top 10 kategori produk terlaris
 category_counts = df['product_category_name'].value_counts().head(10)
 
-st.subheader("Top 10 Best-Selling Product Categories (2016-2018)")
+st.header("Top 10 Best-Selling Product Categories (2016-2018)")
 fig, ax = plt.subplots(figsize=(15, 6))
 sns.barplot(x=category_counts.index, y=category_counts.values, ax=ax)
 ax.set_title('Top 10 Best-Selling Product Categories (2016-2018)')
@@ -101,7 +107,7 @@ df['hour_of_day'] = df['order_purchase_timestamp'].dt.hour
 df['month'] = df['order_purchase_timestamp'].dt.month
 df['is_weekend'] = df['day_of_week'].apply(lambda x: 1 if x >= 5 else 0)
 
-st.subheader("Purchase Frequency by Day of Week")
+st.header("Purchase Frequency by Day of Week")
 fig, ax = plt.subplots(figsize=(10, 5))
 day_counts = df['day_of_week'].value_counts().sort_index()
 day_labels = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -116,7 +122,7 @@ for i, v in enumerate(day_counts.values):
 st.pyplot(fig)
 
 
-st.subheader("Purchase Frequency: Weekday vs. Weekend")
+st.header("Purchase Frequency: Weekday vs. Weekend")
 fig, ax = plt.subplots(figsize=(8, 6))
 
 weekend_counts = df['is_weekend'].value_counts().sort_index()
@@ -132,7 +138,7 @@ for i, v in enumerate(weekend_counts.values):
 st.pyplot(fig)
 
 
-st.subheader("Purchase Frequency by Hour of Day")
+st.header("Purchase Frequency by Hour of Day")
 
 fig, ax = plt.subplots(figsize=(10, 5))
 sns.countplot(x='hour_of_day', data=df, ax=ax)
@@ -147,7 +153,7 @@ for i in ax.containers:
 st.pyplot(fig)
 
 
-st.subheader("Purchase Frequency by Month")
+st.header("Purchase Frequency by Month")
 fig, ax = plt.subplots(figsize=(10, 5))
 month_counts = df['month'].value_counts().reindex(range(1, 13), fill_value=0)
 month_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -170,17 +176,17 @@ st.text(""" Insight:
 
 3. Dalam frekuensi belanja konsumen per bulan dapat kita lihat bahwa kegiatan berbelanja berada pada puncaknya di bulan mei hingga agustus. Hal ini kemungkinan terjadi karena di brazil sendiri terjadi musim dingin sekitar bulan juni-agustus yang mengakibatkan masyarakatnya cenderung berbelanja online dibandingkan pergi ke toko fisik karena keterbatasan berkegiatan di musim salju/musim dingin.""")
 
-st.text("""  Conclution pertanyaan 1
 
-Dalam periode 2016-2018, Olist Store di Brazil menunjukkan pola pembelian yang tinggi pada beberapa kategori produk. **Kategori "bed_bath_table" menjadi yang paling diminati**, diikuti oleh **health_beauty, sports_leisure, furniture_decor, dan computers_accessories**. Produk dalam kategori ini memiliki permintaan yang konsisten dan tinggi. Sementara itu, kategori seperti **housewares, watches_gifts, telephony, garden_tools, dan auto** masih memiliki peminat tetapi dengan jumlah pembelian yang lebih rendah.  
+st.subheader("Conclution pertanyaan 1")
+st.text("""Dalam periode 2016-2018, Olist Store di Brazil menunjukkan pola pembelian yang tinggi pada beberapa kategori produk. Kategori "bed_bath_table" menjadi yang paling diminati, diikuti oleh health_beauty, sports_leisure, furniture_decor, dan computers_accessories. Produk dalam kategori ini memiliki permintaan yang konsisten dan tinggi. Sementara itu, kategori seperti **housewares, watches_gifts, telephony, garden_tools, dan auto** masih memiliki peminat tetapi dengan jumlah pembelian yang lebih rendah.  
 
-Dari pola ini, strategi pemasaran bisa difokuskan pada kategori produk yang paling diminati dengan **peningkatan stok, promosi, dan diskon** untuk mempertahankan serta meningkatkan jumlah pembelian. Selain itu, kategori dengan penjualan lebih rendah bisa diberikan strategi pemasaran khusus untuk meningkatkan daya tariknya.
+Dari pola ini, strategi pemasaran bisa difokuskan pada kategori produk yang paling diminati dengan **peningkatan stok, promosi, dan diskon** untuk mempertahankan serta meningkatkan jumlah pembelian. Selain itu, kategori dengan penjualan lebih rendah bisa diberikan strategi pemasaran khusus untuk meningkatkan daya tariknya.""")
 
 
 
-Conclution pertanyaan 2
+st.subheader("Conclution pertanyaan 2")
 
-Pola waktu pembelian konsumen menunjukkan bahwa transaksi lebih sering terjadi pada hari kerja (Senin–Jumat) dibandingkan hari libur. Hal ini kemungkinan disebabkan oleh kebutuhan rutin, seperti perlengkapan kantor yang harus dibeli untuk menunjang aktivitas harian. Selain itu, banyak toko yang beroperasi penuh pada hari kerja, sehingga konsumen lebih aktif berbelanja pada periode tersebut dibandingkan akhir pekan atau hari libur.
+st.text("""Pola waktu pembelian konsumen menunjukkan bahwa transaksi lebih sering terjadi pada hari kerja (Senin–Jumat) dibandingkan hari libur. Hal ini kemungkinan disebabkan oleh kebutuhan rutin, seperti perlengkapan kantor yang harus dibeli untuk menunjang aktivitas harian. Selain itu, banyak toko yang beroperasi penuh pada hari kerja, sehingga konsumen lebih aktif berbelanja pada periode tersebut dibandingkan akhir pekan atau hari libur.
 
 Jika dilihat berdasarkan jam transaksi dalam sehari, jumlah pesanan mulai meningkat dari pukul 10.00 dan mencapai puncaknya pada pukul 21.00. Setelah pukul 22.00, tingkat transaksi mulai menurun drastis, dan pada pukul 02.00–06.00 aktivitas belanja cenderung sangat rendah. Pola ini menunjukkan bahwa konsumen cenderung melakukan pembelian pada jam istirahat dan waktu luang, terutama pada rentang 10.00–20.00 yang menjadi periode dengan tingkat transaksi tertinggi.
 
